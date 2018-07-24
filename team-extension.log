@@ -1,0 +1,56 @@
+2018-07-20T12:54:22.301Z - info:   [19688] *** FOLDER: d:\Spielwiese\ActorXml ***
+2018-07-20T12:54:22.304Z - info:   [19688] VSTSVSCode/1.136.0 (VSCode 1.23.0; Windows_NT 10.0.17134; Node 7.9.0)
+2018-07-20T12:54:22.305Z - debug:  [19688] Looking for an External Context at d:\Spielwiese\ActorXml
+2018-07-20T12:54:22.306Z - debug:  [19688] Found an External Context at d:\Spielwiese\ActorXml
+2018-07-20T12:54:22.307Z - debug:  [19688] Parsing values from repositoryInfo as string url
+2018-07-20T12:54:22.308Z - debug:  [19688] Could not parse repository url: undefined
+2018-07-20T12:54:22.377Z - debug:  [19688] Started ApplicationInsights telemetry
+2018-07-20T12:54:22.378Z - info:   [19688] Getting repository information with repositoryInfoClient
+2018-07-20T12:54:22.378Z - debug:  [19688] RemoteUrl = http://statfs00:8080/tfs/PT
+2018-07-20T12:54:22.379Z - debug:  [19688] Getting repository information for a TFVC repository at http://statfs00:8080/tfs/PT
+2018-07-20T12:54:22.379Z - debug:  [19688] Parsing values from repositoryInfo as string url
+2018-07-20T12:54:22.379Z - debug:  [19688] Starting the validation of the collection. Url: 'http://statfs00:8080/tfs/PT'
+2018-07-20T12:54:22.417Z - error:  [19688] Failed call with repositoryClient:  Unauthorized. Check your authentication credentials and try again. Error: Error: Failed Request: Unauthorized(401) - http://statfs00:8080/tfs/PT/_apis/tfvc/branches
+2018-07-20T12:54:22.424Z - debug:  [19688] Error: Failed Request: Unauthorized(401) - http://statfs00:8080/tfs/PT/_apis/tfvc/branches
+2018-07-20T12:55:53.596Z - info:   [06888] *** FOLDER: d:\Spielwiese\ActorXml ***
+2018-07-20T12:55:53.608Z - info:   [06888] VSTSVSCode/1.136.0 (VSCode 1.25.1; Windows_NT 10.0.17134; Node 7.9.0)
+2018-07-20T12:55:53.610Z - debug:  [06888] Looking for an External Context at d:\Spielwiese\ActorXml
+2018-07-20T12:55:53.611Z - debug:  [06888] Found an External Context at d:\Spielwiese\ActorXml
+2018-07-20T12:55:53.612Z - debug:  [06888] Parsing values from repositoryInfo as string url
+2018-07-20T12:55:53.613Z - debug:  [06888] Could not parse repository url: undefined
+2018-07-20T12:55:53.721Z - debug:  [06888] Started ApplicationInsights telemetry
+2018-07-20T12:55:53.722Z - info:   [06888] Getting repository information with repositoryInfoClient
+2018-07-20T12:55:53.722Z - debug:  [06888] RemoteUrl = http://statfs00:8080/tfs/PT
+2018-07-20T12:55:53.725Z - debug:  [06888] Getting repository information for a TFVC repository at http://statfs00:8080/tfs/PT
+2018-07-20T12:55:53.726Z - debug:  [06888] Parsing values from repositoryInfo as string url
+2018-07-20T12:55:53.726Z - debug:  [06888] Starting the validation of the collection. Url: 'http://statfs00:8080/tfs/PT'
+2018-07-20T12:55:53.888Z - error:  [06888] Failed call with repositoryClient:  Unauthorized. Check your authentication credentials and try again. Error: Error: Failed Request: Unauthorized(401) - http://statfs00:8080/tfs/PT/_apis/tfvc/branches
+2018-07-20T12:55:53.889Z - debug:  [06888] Error: Failed Request: Unauthorized(401) - http://statfs00:8080/tfs/PT/_apis/tfvc/branches
+2018-07-20T13:26:41.211Z - info:   [41120] *** FOLDER: d:\Spielwiese\ActorXml ***
+2018-07-20T13:26:41.214Z - info:   [41120] VSTSVSCode/1.136.0 (VSCode 1.25.1; Windows_NT 10.0.17134; Node 7.9.0)
+2018-07-20T13:26:41.216Z - debug:  [41120] Looking for an External Context at d:\Spielwiese\ActorXml
+2018-07-20T13:26:41.217Z - debug:  [41120] Found an External Context at d:\Spielwiese\ActorXml
+2018-07-20T13:26:41.218Z - debug:  [41120] Parsing values from repositoryInfo as string url
+2018-07-20T13:26:41.219Z - debug:  [41120] Could not parse repository url: undefined
+2018-07-20T13:26:41.313Z - debug:  [41120] Started ApplicationInsights telemetry
+2018-07-20T13:26:41.313Z - info:   [41120] Getting repository information with repositoryInfoClient
+2018-07-20T13:26:41.313Z - debug:  [41120] RemoteUrl = http://statfs00:8080/tfs/PT
+2018-07-20T13:26:41.315Z - debug:  [41120] Getting repository information for a TFVC repository at http://statfs00:8080/tfs/PT
+2018-07-20T13:26:41.315Z - debug:  [41120] Parsing values from repositoryInfo as string url
+2018-07-20T13:26:41.315Z - debug:  [41120] Starting the validation of the collection. Url: 'http://statfs00:8080/tfs/PT'
+2018-07-20T13:26:41.362Z - error:  [41120] Failed call with repositoryClient:  Unauthorized. Check your authentication credentials and try again. Error: Error: Failed Request: Unauthorized(401) - http://statfs00:8080/tfs/PT/_apis/tfvc/branches
+2018-07-20T13:26:41.362Z - debug:  [41120] Error: Failed Request: Unauthorized(401) - http://statfs00:8080/tfs/PT/_apis/tfvc/branches
+2018-07-23T15:07:27.247Z - info:   [32636] *** FOLDER: d:\Spielwiese\ActorXml ***
+2018-07-23T15:07:27.249Z - info:   [32636] VSTSVSCode/1.136.0 (VSCode 1.25.1; Windows_NT 10.0.17134; Node 7.9.0)
+2018-07-23T15:07:27.250Z - debug:  [32636] Looking for an External Context at d:\Spielwiese\ActorXml
+2018-07-23T15:07:27.251Z - debug:  [32636] Found an External Context at d:\Spielwiese\ActorXml
+2018-07-23T15:07:27.252Z - debug:  [32636] Parsing values from repositoryInfo as string url
+2018-07-23T15:07:27.253Z - debug:  [32636] Could not parse repository url: undefined
+2018-07-23T15:07:27.316Z - debug:  [32636] Started ApplicationInsights telemetry
+2018-07-23T15:07:27.316Z - info:   [32636] Getting repository information with repositoryInfoClient
+2018-07-23T15:07:27.316Z - debug:  [32636] RemoteUrl = http://statfs00:8080/tfs/PT
+2018-07-23T15:07:27.317Z - debug:  [32636] Getting repository information for a TFVC repository at http://statfs00:8080/tfs/PT
+2018-07-23T15:07:27.318Z - debug:  [32636] Parsing values from repositoryInfo as string url
+2018-07-23T15:07:27.318Z - debug:  [32636] Starting the validation of the collection. Url: 'http://statfs00:8080/tfs/PT'
+2018-07-23T15:07:27.494Z - error:  [32636] Failed call with repositoryClient:  Unauthorized. Check your authentication credentials and try again. Error: Error: Failed Request: Unauthorized(401) - http://statfs00:8080/tfs/PT/_apis/tfvc/branches
+2018-07-23T15:07:27.494Z - debug:  [32636] Error: Failed Request: Unauthorized(401) - http://statfs00:8080/tfs/PT/_apis/tfvc/branches
