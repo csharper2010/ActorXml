@@ -6,26 +6,22 @@ using Proto;
 
 namespace ActorXml.KS {
     public class ActorXmlKSService : ActorXmlService {
-        private readonly ActorXmlDispatcher _actorXmlDispatcher;
         private readonly PID _ksActor;
 
-        public ActorXmlKSService() {
-            _actorXmlDispatcher = new ActorXmlDispatcher(DeviceType.KS, "SuperKS");
+        public ActorXmlKSService() : base(DeviceType.KS, "SuperKS") {
             _ksActor = Actor.Spawn(Actor.FromProducer(() => new KSActor()));
 
-            _actorXmlDispatcher.AddIncomingMessageHandler("bestand", new Version(), IncomingMessageHandlers.Bestand(_ksActor));
-            _actorXmlDispatcher.AddIncomingMessageHandler("auslagerung", new Version(), IncomingMessageHandlers.Auslagerung(_ksActor));
+            ActorXmlDispatcher.AddIncomingMessageHandler("bestand", new Version(), IncomingMessageHandlers.Bestand(_ksActor));
+            ActorXmlDispatcher.AddIncomingMessageHandler("auslagerung", new Version(), IncomingMessageHandlers.Auslagerung(_ksActor));
         }
 
-        protected override ActorXmlDispatcher ActorXmlDispatcher => _actorXmlDispatcher;
-
         public void Start() {
-            _actorXmlDispatcher.Start();
-            _actorXmlDispatcher.StartTcpListener(13001);
+            ActorXmlDispatcher.Start();
+            ActorXmlDispatcher.StartTcpListener(13001);
         }
 
         public void Stop() {
-            _actorXmlDispatcher.Stop();
+            ActorXmlDispatcher.Stop();
         }
 
         public bool HasWarenwirtschaft() => GetWarenwirtschaft() != null;

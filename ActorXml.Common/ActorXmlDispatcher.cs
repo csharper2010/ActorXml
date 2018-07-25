@@ -7,25 +7,19 @@ using Proto;
 
 namespace ActorXml.Common {
     public class ActorXmlDispatcher : IStartable {
+        private readonly Func<XElement> _getHelloMessage;
         private PID _actor;
         private readonly IDictionary<string, SortedDictionary<Version, Action<XElement, DeviceInfo, ActorXmlDispatcher>>> _incomingMessageHandlers = new Dictionary<string, SortedDictionary<Version, Action<XElement, DeviceInfo, ActorXmlDispatcher>>>();
 
-        private readonly DeviceType _ownDeviceType;
-        private readonly string _ownDeviceName;
-
-        public ActorXmlDispatcher(DeviceType ownDeviceType, string ownDeviceName) {
-            _ownDeviceType = ownDeviceType;
-            _ownDeviceName = ownDeviceName;
-
-            AddIncomingMessageHandler("hello", new Version(), MessageHandlers.Hello);
-            AddIncomingMessageHandler("ping", new Version(), MessageHandlers.Ping);
+        public ActorXmlDispatcher(Func<XElement> getHelloMessage) {
+            _getHelloMessage = getHelloMessage;
         }
 
         public void Start() {
             if (_actor != null) {
                 Stop();
             }
-            _actor = Actor.Spawn(Actor.FromProducer(() => new ActorXmlActor(HandleIncomingMessage, () => GetHelloMessage(false))));
+            _actor = Actor.Spawn(Actor.FromProducer(() => new ActorXmlActor(HandleIncomingMessage, _getHelloMessage)));
         }
 
         public void Stop() {
@@ -85,19 +79,6 @@ namespace ActorXml.Common {
                 ThreadPool.QueueUserWorkItem(_ => versionDict.Values.First().Invoke(message, deviceInfo, this));
             }
         }
-
-        private static class MessageHandlers {
-            public static void Hello(XElement message, DeviceInfo deviceInfo, ActorXmlDispatcher ActorXmlDispatcher) {
-                ActorXmlDispatcher.Send(deviceInfo.Name, ActorXmlDispatcher.GetHelloMessage(true));
-            }
-
-            public static void Ping(XElement message, DeviceInfo deviceInfo, ActorXmlDispatcher ActorXmlDispatcher) {
-                ActorXmlDispatcher.Send(deviceInfo.Name, new XElement("pingResponse", message.Attributes()));
-            }
-        }
-
-        private XElement GetHelloMessage(bool response) => new XElement(response ? "helloResponse" : "hello",
-            new XAttribute("type", _ownDeviceType.ToString()), new XAttribute("name", _ownDeviceName));
     }
 
     public interface IStartable {

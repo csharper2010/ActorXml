@@ -6,26 +6,23 @@ using ActorXml.Common;
 
 namespace ActorXml.WaWi {
     public class ActorXmlWaWiService : ActorXmlService, IStartable {
-        private readonly ActorXmlDispatcher _actorXmlDispatcher;
         private readonly ArtikelService _artikelService;
 
-        public ActorXmlWaWiService() {
-            _actorXmlDispatcher = new ActorXmlDispatcher(DeviceType.Warenwirtschaft, "SuperWaWi");
+        public ActorXmlWaWiService()
+            : base(DeviceType.Warenwirtschaft, "SuperWaWi") {
             _artikelService = new ArtikelService();
 
             AddIncomingMessageHandlers();
         }
 
-        protected override ActorXmlDispatcher ActorXmlDispatcher => _actorXmlDispatcher;
-
         public void Start() {
-            _actorXmlDispatcher.Start();
-            _actorXmlDispatcher.StartTcpListener(13000);
-            _actorXmlDispatcher.StartTcpClient("localhost", 13001);
+            ActorXmlDispatcher.Start();
+            ActorXmlDispatcher.StartTcpListener(13000);
+            ActorXmlDispatcher.StartTcpClient("localhost", 13001);
         }
 
         public void Stop() {
-            _actorXmlDispatcher.Stop();
+            ActorXmlDispatcher.Stop();
         }
 
         public bool HasKS() => ActorXmlDispatcher.GetDeviceInfos().Any(i => i.DeviceType == DeviceType.KS);
@@ -35,8 +32,8 @@ namespace ActorXml.WaWi {
         public bool HasSichtwahl() => ActorXmlDispatcher.GetDeviceInfos().Any(i => i.DeviceType == DeviceType.Sichtwahl);
 
         private void AddIncomingMessageHandlers() {
-            _actorXmlDispatcher.AddIncomingMessageHandler("getArtikelInfo", new Version(), MessageHandlers.GetArtikelInfo(_artikelService));
-            _actorXmlDispatcher.AddIncomingMessageHandler("addArtikel", new Version(), MessageHandlers.AddArtikel);
+            ActorXmlDispatcher.AddIncomingMessageHandler("getArtikelInfo", new Version(), MessageHandlers.GetArtikelInfo(_artikelService));
+            ActorXmlDispatcher.AddIncomingMessageHandler("addArtikel", new Version(), MessageHandlers.AddArtikel);
         }
 
         public new class MessageFactories : ActorXmlService.MessageFactories {
