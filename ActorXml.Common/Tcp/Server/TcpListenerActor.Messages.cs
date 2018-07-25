@@ -3,6 +3,9 @@ using Proto;
 
 namespace ActorXml.Common.Tcp.Server {
     public partial class TcpListenerActor : IActor {
+        private class TryHostMessage {
+        }
+
         private class NewTcpClientMessage {
             public TcpClient Client { get; }
 
@@ -15,6 +18,7 @@ namespace ActorXml.Common.Tcp.Server {
         }
 
         public static class Messages {
+            internal static object TryHost() => new TryHostMessage();
             internal static object NewTcpClient(TcpClient client) => new NewTcpClientMessage(client);
             internal static object TcpClientClosed() => new TcpClientClosedMessage();
         }

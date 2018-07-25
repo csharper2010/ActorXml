@@ -22,62 +22,68 @@ namespace ActorXml.Common.Tcp.Server {
         }
 
         public Task ReceiveAsync(IContext context) {
-            if (context.Message is Started) {
-                Console.WriteLine("Receiving Started");
+            // TODO auf welcher Ebene findet der echte regelmäßige PING statt? Ist das von der Anwendung initiiert (z.B. weil auch die Konfiguration dafür in der Anwendung liegt) oder eine Low-Level-Aufgabe
+            switch (context.Message) {
+                case Started _:
+                    Console.WriteLine("Receiving Started");
+                    context.Tell(context.Self, Messages.TryHost());
+                    return Actor.Done;
+                case TryHostMessage _:
+                    try {
+                        IPAddress localAddr = IPAddress.Parse("127.0.0.1");
+                        Console.WriteLine($"Trying to host on {localAddr}, {_port}...");
 
-                IPAddress localAddr = IPAddress.Parse("127.0.0.1");
+                        // TcpListener server = new TcpListener(port);
+                        _server = new TcpListener(localAddr, _port);
 
-                // TcpListener server = new TcpListener(port);
-                _server = new TcpListener(localAddr, _port);
+                        // Start listening for client requests.
+                        _server.Start();
 
-                // Start listening for client requests.
-                _server.Start();
+                        _acceptActor = context.Spawn(Actor.FromProducer(() => new AcceptActor()));
+                        _acceptActor.Request(_server, context.Self);
 
-                _acceptActor = context.Spawn(Actor.FromProducer(() => new AcceptActor()));
-                _acceptActor.Request(_server, context.Self);
+                        Console.WriteLine("TryHost Done");
+                    } catch (Exception e) {
+                        Console.WriteLine($"Exception {e.Message}, Retry in 30 Seconds");
+                        context.ReenterAfter(Task.Delay(TimeSpan.FromSeconds(30)), () => context.Tell(context.Self, Messages.TryHost()));
+                    }
+                    return Actor.Done;
+                case NewTcpClientMessage newTcpClientMessage:
+                    Console.WriteLine("Receiving NewTcpClient");
 
-                Console.WriteLine("Started Done");
+                    _acceptActor.Request(_server, context.Self);
 
-                return Actor.Done;
-            }
-            if (context.Message is NewTcpClientMessage newTcpClientMessage) {
-                Console.WriteLine("Receiving NewTcpClient");
+                    _listenerActors[context.Spawn(Actor.FromProducer(() => new TcpChannelActor(newTcpClientMessage.Client, _actorXmlActor, false)))] = ++_counter;
 
-                _acceptActor.Request(_server, context.Self);
+                    Console.WriteLine("NewTcpClient Done");
 
-                _listenerActors[context.Spawn(Actor.FromProducer(() => new TcpChannelActor(newTcpClientMessage.Client, _actorXmlActor, false)))] = ++_counter;
+                    return Actor.Done;
+                case TcpClientClosedMessage _:
+                    Console.WriteLine($"Receiving TcpClientClosedMessage for {context.Sender}");
 
-                Console.WriteLine("NewTcpClient Done");
+                    if (_listenerActors.TryGetValue(context.Sender, out int id)) {
+                        Console.WriteLine($"Client {id} found, removing it from Dictionary");
+                        context.Sender.Stop();
+                        _listenerActors.Remove(context.Sender);
+                    } else {
+                        Console.WriteLine($"Client not found");
+                    }
 
-                return Actor.Done;
-            }
-            if (context.Message is TcpClientClosedMessage) {
-                Console.WriteLine($"Receiving TcpClientClosedMessage for {context.Sender}");
+                    Console.WriteLine($"TcpClientClosedMessage Done");
+                    return Actor.Done;
+                case Stopping _:
+                    Console.WriteLine("Receiving Stopping");
 
-                if (_listenerActors.TryGetValue(context.Sender, out int id)) {
-                    Console.WriteLine($"Client {id} found, removing it from Dictionary");
-                    context.Sender.Stop();
-                    _listenerActors.Remove(context.Sender);
-                } else {
-                    Console.WriteLine($"Client not found");
-                }
+                    foreach (var listener in _listenerActors.Keys) {
+                        listener.Tell("EXIT");
+                    }
 
-                Console.WriteLine($"TcpClientClosedMessage Done");
-                return Actor.Done;
-            }
-            if (context.Message is Stopping) {
-                Console.WriteLine("Receiving Stopping");
+                    _acceptActor.Stop();
+                    _server?.Stop();
+                    _server = null;
+                    Console.WriteLine("Stopping done");
 
-                foreach (var listener in _listenerActors.Keys) {
-                    listener.Tell("EXIT");
-                }
-
-                _acceptActor.Stop();
-                _server?.Stop();
-                _server = null;
-                Console.WriteLine("Stopping done");
-
-                return Actor.Done;
+                    return Actor.Done;
             }
             return Actor.Done;
         }
