@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Threading;
-using ActorXml.WaWi;
+using ActorXml.Common;
 
-namespace Server {
+namespace ActorXml.WaWi {
     class Program {
         static void Main(string[] args) {
+            var random = new Random();
             Console.WriteLine("Creating ActorXmlService");
             var service = new ActorXmlWaWiService();
             service.Start();
@@ -22,10 +23,18 @@ namespace Server {
                     string[] parts = line.Split(" ");
                     switch (parts[0].ToLower()) {
                         case "ping":
-                            service.Ping(parts[1]);
+                            Console.WriteLine(service.Request(parts[1], ActorXmlService.MessageFactories.Ping(), TimeSpan.FromTicks(random.Next(100000))));
                             break;
                         case "devices":
                             Console.WriteLine($"KS: {service.HasKS()}, Sichtwahl: {service.HasSichtwahl()}");
+                            break;
+                        case "bestand":
+                            var ks = service.GetKS();
+                            if (ks == null) {
+                                Console.WriteLine("kein KS");
+                            } else {
+                                Console.WriteLine(service.Request(ks.Name, ActorXmlWaWiService.MessageFactories.Bestand(int.Parse(parts[1])), TimeSpan.FromSeconds(1)));
+                            }
                             break;
                     }
                 }

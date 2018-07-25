@@ -17,7 +17,8 @@ namespace ActorXml.Common {
             _ownDeviceType = ownDeviceType;
             _ownDeviceName = ownDeviceName;
 
-            AddMessageHandler("hello", new Version(), MessageHandlers.Hello);
+            AddIncomingMessageHandler("hello", new Version(), MessageHandlers.Hello);
+            AddIncomingMessageHandler("ping", new Version(), MessageHandlers.Ping);
         }
 
         public void Start() {
@@ -53,7 +54,16 @@ namespace ActorXml.Common {
             }
         }
 
-        public void AddMessageHandler(string elementName, Version version, Action<XElement, DeviceInfo, ActorXmlDispatcher> action) {
+        public TResult Request<TResult>(string client, XElement request, Func<XElement, TResult> responseHandler, TimeSpan timeout) {
+            try {
+                return responseHandler(_actor.RequestAsync<XElement>(ActorXmlActor.Messages.RequestMessage(client, request, DateTime.UtcNow + timeout + TimeSpan.FromSeconds(10)), timeout).Result);
+            } catch (Exception e) when (e is TimeoutException || e.InnerException is TimeoutException) {
+                Console.WriteLine($"Timeout {timeout} hat angeschlagen");
+                return default(TResult);
+            }
+        }
+
+        public void AddIncomingMessageHandler(string elementName, Version version, Action<XElement, DeviceInfo, ActorXmlDispatcher> action) {
             if (!_incomingMessageHandlers.TryGetValue(elementName, out SortedDictionary<Version, Action<XElement, DeviceInfo, ActorXmlDispatcher>> versionDict)) {
                 _incomingMessageHandlers[elementName] = versionDict = new SortedDictionary<Version, Action<XElement, DeviceInfo, ActorXmlDispatcher>>();
             }
@@ -72,6 +82,10 @@ namespace ActorXml.Common {
         private static class MessageHandlers {
             public static void Hello(XElement message, DeviceInfo deviceInfo, ActorXmlDispatcher ActorXmlDispatcher) {
                 ActorXmlDispatcher.Send(deviceInfo.Name, ActorXmlDispatcher.GetHelloMessage(true));
+            }
+
+            public static void Ping(XElement message, DeviceInfo deviceInfo, ActorXmlDispatcher ActorXmlDispatcher) {
+                ActorXmlDispatcher.Send(deviceInfo.Name, new XElement("pingResponse", message.Attributes()));
             }
         }
 

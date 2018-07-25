@@ -17,6 +17,8 @@ namespace ActorXml.Common {
         private readonly IDictionary<int, PID> _tcpListenerActors = new Dictionary<int, PID>();
         private readonly IDictionary<string, PID> _tcpClientActors = new Dictionary<string, PID>();
 
+        private readonly Dictionary<string, (PID resultPid, DateTime allowGarbageCollectAfter)> _openRequests = new Dictionary<string, (PID resultPid, DateTime allowGarbageCollectAfter)>();
+
         public ActorXmlActor(Action<XElement, DeviceInfo> callHandler, Func<XElement> createHelloMessage) {
             _callHandler = callHandler;
             _createHelloMessage = createHelloMessage;
@@ -42,7 +44,13 @@ namespace ActorXml.Common {
                 return Actor.Done;
             }
             if (context.Message is ActorXmlIncomingMessage incomingMessage) {
-                HandleIncomingMessage(incomingMessage);
+                XAttribute idAttribute = incomingMessage.Message.Attribute("id");
+                if (idAttribute != null && _openRequests.TryGetValue(idAttribute.Value, out var record)) {
+                    _openRequests.Remove(idAttribute.Value);
+                    context.Tell(record.resultPid, incomingMessage.Message);
+                } else {
+                    HandleIncomingMessage(incomingMessage);
+                }
                 return Actor.Done;
             }
             if (context.Message is ActorXmlOutgoingMessage outgoingMessage) {
@@ -54,6 +62,23 @@ namespace ActorXml.Common {
                 }
                 if (!found) {
                     Console.WriteLine($"Client {outgoingMessage.ClientName} not found");
+                }
+                return Actor.Done;
+            }
+            if (context.Message is ActorXmlRequestMessage requestMessage) {
+                foreach (var kvp in _openRequests.Where(r => r.Value.allowGarbageCollectAfter < DateTime.Now).ToArray()) {
+                    _openRequests.Remove(kvp.Key);
+                }
+
+                var targetClient = _deviceInfos.FirstOrDefault(kvp =>
+                    kvp.Value.Name.Equals(requestMessage.ClientName, StringComparison.CurrentCultureIgnoreCase));
+                if (targetClient.Key == null) {
+                    Console.WriteLine($"Client {requestMessage.ClientName} not found");
+                } else {
+                    string id = Guid.NewGuid().ToString();
+                    _openRequests.Add(id, (context.Sender, requestMessage.AllowGarbageCollectAfter));
+                    requestMessage.Message.Add(new XAttribute("id", id));
+                    targetClient.Key.Tell(TcpChannelActor.Messages.WriteMessage(requestMessage.Message));
                 }
             }
             return Actor.Done;

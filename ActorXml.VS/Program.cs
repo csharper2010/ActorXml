@@ -2,12 +2,15 @@
 using System.Threading;
 using ActorXml.Common;
 
-namespace ActorXml.KS {
+namespace ActorXml.VS {
     class Program {
         static void Main(string[] args) {
             var random = new Random();
+            Console.Write("Devicenamen angeben: ");
+            string deviceName = Console.ReadLine();
+
             Console.WriteLine("Creating ActorXmlService");
-            var service = new ActorXmlKSService();
+            var service = new ActorXmlVSService(deviceName);
             service.Start();
             bool stop = false;
             while (!stop) {

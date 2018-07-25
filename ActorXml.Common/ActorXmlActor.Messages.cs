@@ -1,4 +1,5 @@
-﻿using System.Xml.Linq;
+﻿using System;
+using System.Xml.Linq;
 using Proto;
 
 namespace ActorXml.Common {
@@ -30,6 +31,16 @@ namespace ActorXml.Common {
             }
         }
 
+        private class ActorXmlRequestMessage : ActorXmlMessage {
+            public string ClientName { get; }
+            public DateTime AllowGarbageCollectAfter { get; }
+
+            public ActorXmlRequestMessage(string clientName, XElement message, DateTime allowGarbageCollectAfter) : base(message) {
+                ClientName = clientName;
+                AllowGarbageCollectAfter = allowGarbageCollectAfter;
+            }
+        }
+
         private class StartTcpListenerMessage {
             public int Port { get; }
 
@@ -54,6 +65,7 @@ namespace ActorXml.Common {
             public static object GetDeviceInfos() => new GetDeviceInfosMessage();
             public static object IncomingMessage(PID sourceClient, XElement message) => new ActorXmlIncomingMessage(sourceClient, message);
             public static object OutgoingMessage(string clientName, XElement message) => new ActorXmlOutgoingMessage(clientName, message);
+            public static object RequestMessage(string clientName, XElement message, DateTime allowGarbageCollectAfter) => new ActorXmlRequestMessage(clientName, message, allowGarbageCollectAfter);
 
             public static object StartTcpListener(int port) => new StartTcpListenerMessage(port);
             public static object StartTcpClient(string ipAddress, int port) => new StartTcpClientMessage(ipAddress, port);
