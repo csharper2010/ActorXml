@@ -55,12 +55,18 @@ namespace ActorXml.Common {
         }
 
         public TResult Request<TResult>(string client, XElement request, Func<XElement, TResult> responseHandler, TimeSpan timeout) {
+            int threadId = Thread.CurrentThread.ManagedThreadId;
+            TResult result;
             try {
-                return responseHandler(_actor.RequestAsync<XElement>(ActorXmlActor.Messages.RequestMessage(client, request, DateTime.UtcNow + timeout + TimeSpan.FromSeconds(10)), timeout).Result);
+                result = responseHandler(_actor.RequestAsync<XElement>(ActorXmlActor.Messages.RequestMessage(client, request, DateTime.UtcNow + timeout + TimeSpan.FromSeconds(10)), timeout).Result);
             } catch (Exception e) when (e is TimeoutException || e.InnerException is TimeoutException) {
                 Console.WriteLine($"Timeout {timeout} hat angeschlagen");
-                return default(TResult);
+                result = default(TResult);
             }
+            if (Thread.CurrentThread.ManagedThreadId != threadId) {
+                Console.WriteLine("Falscher Thread");
+            }
+            return result;
         }
 
         public void AddIncomingMessageHandler(string elementName, Version version, Action<XElement, DeviceInfo, ActorXmlDispatcher> action) {
@@ -75,6 +81,7 @@ namespace ActorXml.Common {
                 Console.WriteLine($"DEVINFO: Message {message.Name.LocalName} wird nicht behandelt");
             } else {
                 // TODO: VersionDict berücksichtigen
+                // hier wird in der echten Welt ein neuer Thread erzeugt, BusinessContext aufgebaut und die eigentliche Aufgabe ausgeführt
                 ThreadPool.QueueUserWorkItem(_ => versionDict.Values.First().Invoke(message, deviceInfo, this));
             }
         }

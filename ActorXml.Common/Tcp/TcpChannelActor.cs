@@ -21,47 +21,38 @@ namespace ActorXml.Common.Tcp {
         }
 
         public Task ReceiveAsync(IContext context) {
-            if (context.Message is Started) {
-                //context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
-                context.Spawn(Actor.FromProducer(() => new TcpChannelReadActor(_client, _cts)));
+            switch (context.Message) {
+                case Started _:
+                    //context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
+                    context.Spawn(Actor.FromProducer(() => new TcpChannelReadActor(_client, _cts)));
 
-                if (_shouldInitiateHandshake) {
-                    _actorXmlActor.Request(ActorXmlActor.Messages.InitiateHandshake(), context.Self);
-                }
+                    if (_shouldInitiateHandshake) {
+                        _actorXmlActor.Request(ActorXmlActor.Messages.InitiateHandshake(), context.Self);
+                    }
+                    break;
 
-                return Actor.Done;
-            }
+                case WriteMessageMessage writeMessage:
+                    byte[] buffer = Encoding.UTF8.GetBytes(writeMessage.Message.ToString());
+                    _client.GetStream().Write(buffer, 0, buffer.Length);
+                    break;
 
-            //if (context.Message is ReceiveTimeout) {
-            //    context.SetReceiveTimeout(TimeSpan.FromSeconds(5));
-            //    Console.WriteLine("ReceiveTimeout");
-            //}
+                case MessageReadMessage clientMessageRead:
+                    _actorXmlActor.Tell(ActorXmlActor.Messages.IncomingMessage(context.Self, clientMessageRead.Message));
+                    break;
 
-            if (context.Message is WriteMessageMessage writeMessage) {
-                byte[] buffer = Encoding.UTF8.GetBytes(writeMessage.Message.ToString());
-                _client.GetStream().Write(buffer, 0, buffer.Length);
-                return Actor.Done;
-            }
+                case ClientClosedMessage _:
+                    _actorXmlActor.Tell(ActorXmlActor.Messages.IncomingMessage(context.Self, new XElement("bye", null)));
+                    context.Parent.Request(TcpListenerActor.Messages.TcpClientClosed(), context.Self);
+                    context.Self.Stop();
+                    break;
 
-            if (context.Message is MessageReadMessage clientMessageRead) {
-                _actorXmlActor.Tell(ActorXmlActor.Messages.IncomingMessage(context.Self, clientMessageRead.Message));
-                return Actor.Done;
-            }
-
-            if (context.Message is ClientClosedMessage) {
-                _actorXmlActor.Tell(ActorXmlActor.Messages.IncomingMessage(context.Self, new XElement("bye", null)));
-                context.Parent.Request(TcpListenerActor.Messages.TcpClientClosed(), context.Self);
-                context.Self.Stop();
-                return Actor.Done;
-            }
-
-            if (context.Message is Stopping) {
-                try {
-                    _client.Dispose();
-                } catch (Exception e) {
-                    Console.WriteLine(e.Message);
-                }
-                return Actor.Done;
+                case Stopping _:
+                    try {
+                        _client.Dispose();
+                    } catch (Exception e) {
+                        Console.WriteLine(e.Message);
+                    }
+                    break;
             }
             return Actor.Done;
         }

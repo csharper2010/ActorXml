@@ -26,6 +26,19 @@ namespace ActorXml.KS {
                             context.Respond(0);
                         });
                     break;
+
+                case AuslagerungMessage auslagerung:
+                    context.ReenterAfter(
+                        Task.Delay(_random.Next(_timeoutMaxMilliseconds - _timeoutMinMilliseconds) + _timeoutMinMilliseconds),
+                        () => {
+                            if (_database.TryGetValue(auslagerung.Pzn, out int bestand) && bestand > 0) {
+                                int auslagerungsmenge = Math.Min(bestand, auslagerung.Menge);
+                                _database[auslagerung.Pzn] = bestand - auslagerungsmenge;
+                                context.Respond(auslagerungsmenge);
+                            }
+                            context.Respond(0);
+                        });
+                    break;
             }
             return Actor.Done;
         }

@@ -5,6 +5,8 @@ namespace ActorXml.Common {
     public abstract class ActorXmlService {
         protected abstract ActorXmlDispatcher ActorXmlDispatcher { get; }
 
+        public void Broadcast(DeviceType deviceType, XElement elem) => ActorXmlDispatcher.Broadcast(deviceType, elem);
+
         public void Send(string client, XElement elem) => ActorXmlDispatcher.Send(client, elem);
 
         public TResult Request<TResult>(string client, RequestHandler<TResult> requestHandler, TimeSpan timeout) =>
