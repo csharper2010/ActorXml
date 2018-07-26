@@ -27,7 +27,8 @@ namespace ActorXml.Common.Tcp.Server {
                 case Started _:
                     Console.WriteLine("Receiving Started");
                     context.Tell(context.Self, Messages.TryHost());
-                    return Actor.Done;
+                    break;
+
                 case TryHostMessage _:
                     try {
                         IPAddress localAddr = IPAddress.Parse("127.0.0.1");
@@ -47,7 +48,8 @@ namespace ActorXml.Common.Tcp.Server {
                         Console.WriteLine($"Exception {e.Message}, Retry in 30 Seconds");
                         context.ReenterAfter(Task.Delay(TimeSpan.FromSeconds(30)), () => context.Tell(context.Self, Messages.TryHost()));
                     }
-                    return Actor.Done;
+                    break;
+
                 case NewTcpClientMessage newTcpClientMessage:
                     Console.WriteLine("Receiving NewTcpClient");
 
@@ -56,8 +58,8 @@ namespace ActorXml.Common.Tcp.Server {
                     _listenerActors[context.Spawn(Actor.FromProducer(() => new TcpChannelActor(newTcpClientMessage.Client, _actorXmlActor, false)))] = ++_counter;
 
                     Console.WriteLine("NewTcpClient Done");
+                    break;
 
-                    return Actor.Done;
                 case TcpClientClosedMessage _:
                     Console.WriteLine($"Receiving TcpClientClosedMessage for {context.Sender}");
 
@@ -70,7 +72,8 @@ namespace ActorXml.Common.Tcp.Server {
                     }
 
                     Console.WriteLine($"TcpClientClosedMessage Done");
-                    return Actor.Done;
+                    break;
+
                 case Stopping _:
                     Console.WriteLine("Receiving Stopping");
 
@@ -82,8 +85,7 @@ namespace ActorXml.Common.Tcp.Server {
                     _server?.Stop();
                     _server = null;
                     Console.WriteLine("Stopping done");
-
-                    return Actor.Done;
+                    break;
             }
             return Actor.Done;
         }

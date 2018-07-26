@@ -26,60 +26,62 @@ namespace ActorXml.Common {
 
         public Task ReceiveAsync(IContext context) {
             // TODO Sollen TcpListener und TcpClient über diesen Weg erstellt werden?
-            if (context.Message is StartTcpListenerMessage startTcpListener) {
-                _tcpListenerActors[startTcpListener.Port] = context.Spawn(Actor.FromProducer(() => new TcpListenerActor(startTcpListener.Port, context.Self)));
-                return Actor.Done;
-            }
-            if (context.Message is StartTcpClientMessage startTcpClient) {
-                _tcpClientActors[$"{startTcpClient.IPAddress}:{startTcpClient.Port}"] = context.Spawn(Actor.FromProducer(() => new TcpClientActor(startTcpClient.IPAddress, startTcpClient.Port, context.Self)));
-                return Actor.Done;
-            }
-            if (context.Message is InitiateHandshakeMessage) {
-                // TODO ist der Handshake über diesen Weg glücklich gewählt?
-                context.Respond(TcpChannelActor.Messages.WriteMessage(_createHelloMessage()));
-                return Actor.Done;
-            }
-            if (context.Message is GetDeviceInfosMessage) {
-                context.Respond(_deviceInfos.Values.ToArray());
-                return Actor.Done;
-            }
-            if (context.Message is ActorXmlIncomingMessage incomingMessage) {
-                XAttribute idAttribute = incomingMessage.Message.Attribute("id");
-                if (idAttribute != null && _openRequests.TryGetValue(idAttribute.Value, out var record)) {
-                    _openRequests.Remove(idAttribute.Value);
-                    context.Tell(record.resultPid, incomingMessage.Message);
-                } else {
-                    HandleIncomingMessage(incomingMessage);
-                }
-                return Actor.Done;
-            }
-            if (context.Message is ActorXmlOutgoingMessage outgoingMessage) {
-                bool found = false;
-                foreach (var targetClient in _deviceInfos.Where(kvp =>
-                    kvp.Value.Name.Equals(outgoingMessage.ClientName, StringComparison.CurrentCultureIgnoreCase))) {
-                    targetClient.Key.Tell(TcpChannelActor.Messages.WriteMessage(outgoingMessage.Message));
-                    found = true;
-                }
-                if (!found) {
-                    Console.WriteLine($"Client {outgoingMessage.ClientName} not found");
-                }
-                return Actor.Done;
-            }
-            if (context.Message is ActorXmlRequestMessage requestMessage) {
-                foreach (var kvp in _openRequests.Where(r => r.Value.allowGarbageCollectAfter < DateTime.Now).ToArray()) {
-                    _openRequests.Remove(kvp.Key);
-                }
+            switch (context.Message) {
+                case StartTcpListenerMessage startTcpListener:
+                    _tcpListenerActors[startTcpListener.Port] = context.Spawn(Actor.FromProducer(() => new TcpListenerActor(startTcpListener.Port, context.Self)));
+                    break;
 
-                var targetClient = _deviceInfos.FirstOrDefault(kvp =>
-                    kvp.Value.Name.Equals(requestMessage.ClientName, StringComparison.CurrentCultureIgnoreCase));
-                if (targetClient.Key == null) {
-                    Console.WriteLine($"Client {requestMessage.ClientName} not found");
-                } else {
-                    string id = Guid.NewGuid().ToString();
-                    _openRequests.Add(id, (context.Sender, requestMessage.AllowGarbageCollectAfter));
-                    requestMessage.Message.Add(new XAttribute("id", id));
-                    targetClient.Key.Tell(TcpChannelActor.Messages.WriteMessage(requestMessage.Message));
-                }
+                case StartTcpClientMessage startTcpClient:
+                    _tcpClientActors[$"{startTcpClient.IPAddress}:{startTcpClient.Port}"] = context.Spawn(Actor.FromProducer(() => new TcpClientActor(startTcpClient.IPAddress, startTcpClient.Port, context.Self)));
+                    break;
+
+                case InitiateHandshakeMessage _:
+                    // TODO ist der Handshake über diesen Weg glücklich gewählt?
+                    context.Respond(TcpChannelActor.Messages.WriteMessage(_createHelloMessage()));
+                    break;
+
+                case GetDeviceInfosMessage _:
+                    context.Respond(_deviceInfos.Values.ToArray());
+                    break;
+
+                case ActorXmlIncomingMessage incomingMessage:
+                    XAttribute idAttribute = incomingMessage.Message.Attribute("id");
+                    if (idAttribute != null && _openRequests.TryGetValue(idAttribute.Value, out var record)) {
+                        _openRequests.Remove(idAttribute.Value);
+                        context.Tell(record.resultPid, incomingMessage.Message);
+                    } else {
+                        HandleIncomingMessage(incomingMessage);
+                    }
+                    break;
+
+                case ActorXmlOutgoingMessage outgoingMessage:
+                    bool found = false;
+                    foreach (var client in _deviceInfos.Where(kvp =>
+                        kvp.Value.Name.Equals(outgoingMessage.ClientName, StringComparison.CurrentCultureIgnoreCase))) {
+                        client.Key.Tell(TcpChannelActor.Messages.WriteMessage(outgoingMessage.Message));
+                        found = true;
+                    }
+                    if (!found) {
+                        Console.WriteLine($"Client {outgoingMessage.ClientName} not found");
+                    }
+                    break;
+
+                case ActorXmlRequestMessage requestMessage:
+                    foreach (var kvp in _openRequests.Where(r => r.Value.allowGarbageCollectAfter < DateTime.Now).ToArray()) {
+                        _openRequests.Remove(kvp.Key);
+                    }
+
+                    var targetClient = _deviceInfos.FirstOrDefault(kvp =>
+                        kvp.Value.Name.Equals(requestMessage.ClientName, StringComparison.CurrentCultureIgnoreCase));
+                    if (targetClient.Key == null) {
+                        Console.WriteLine($"Client {requestMessage.ClientName} not found");
+                    } else {
+                        string id = Guid.NewGuid().ToString();
+                        _openRequests.Add(id, (context.Sender, requestMessage.AllowGarbageCollectAfter));
+                        requestMessage.Message.Add(new XAttribute("id", id));
+                        targetClient.Key.Tell(TcpChannelActor.Messages.WriteMessage(requestMessage.Message));
+                    }
+                    break;
             }
             return Actor.Done;
         }
