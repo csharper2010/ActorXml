@@ -59,7 +59,7 @@ namespace ActorXml.WaWi {
                         Console.WriteLine("pzn fehlt");
                         return;
                     }
-                    ActorXmlService.Send(deviceInfo.Name,
+                    ActorXmlService.Send(deviceInfo,
                         new XElement("getArtikelInfoResponse", 
                             pzn,
                             new XAttribute("preis", artikelService.GetPreis(pzn.Value))));
@@ -72,7 +72,7 @@ namespace ActorXml.WaWi {
                     Console.WriteLine("pzn fehlt");
                     return;
                 }
-                ActorXmlDispatcher.Send(deviceInfo.Name,
+                ActorXmlDispatcher.Send(deviceInfo,
                     new XElement("addArtikelResponse", pzn, new XAttribute("deviceName", deviceInfo.Name)));
                 Thread.Sleep(500);
                 ActorXmlDispatcher.Broadcast(DeviceType.Sichtwahl,

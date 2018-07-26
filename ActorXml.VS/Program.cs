@@ -4,7 +4,7 @@ using ActorXml.Common;
 
 namespace ActorXml.VS {
     class Program {
-        static void Main(string[] args) {
+        static void Main() {
             var random = new Random();
             Console.Write("Devicenamen angeben: ");
             string deviceName = Console.ReadLine();
@@ -26,7 +26,7 @@ namespace ActorXml.VS {
                     string[] parts = line.Split(" ");
                     switch (parts[0].ToLower()) {
                         case "ping":
-                            Console.WriteLine(service.Request(parts[1], ActorXmlService.MessageFactories.Ping(), TimeSpan.FromTicks(random.Next(100000))));
+                            Console.WriteLine(service.Request(service.GetDevice(parts[1]), ActorXmlService.MessageFactories.Ping(), TimeSpan.FromTicks(random.Next(100000))));
                             break;
                         case "devices":
                             Console.WriteLine($"Warenwirtschaft: {service.HasWarenwirtschaft()}{(service.GetWarenwirtschaft() != null ? " (" + service.GetWarenwirtschaft().Name + ")" : null)}");

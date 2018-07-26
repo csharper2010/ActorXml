@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Xml.Linq;
 
 namespace ActorXml.Common {
@@ -20,10 +22,18 @@ namespace ActorXml.Common {
 
         public void Broadcast(DeviceType deviceType, XElement elem) => ActorXmlDispatcher.Broadcast(deviceType, elem);
 
-        public void Send(string client, XElement elem) => ActorXmlDispatcher.Send(client, elem);
+        public void Send(DeviceInfo client, XElement elem) => ActorXmlDispatcher.Send(client, elem);
 
-        public TResult Request<TResult>(string client, RequestHandler<TResult> requestHandler, TimeSpan timeout) =>
+        public TResult Request<TResult>(DeviceInfo client, RequestHandler<TResult> requestHandler, TimeSpan timeout) =>
             ActorXmlDispatcher.Request(client, requestHandler.Request, requestHandler.ResponseHandler, timeout);
+
+        public DeviceInfo GetDevice(string deviceName) {
+            return ActorXmlDispatcher.GetDeviceInfos().FirstOrDefault(d => d.Name.Equals(deviceName, StringComparison.CurrentCultureIgnoreCase));
+        }
+
+        public IEnumerable<DeviceInfo> GetDevices(DeviceType deviceType) {
+            return ActorXmlDispatcher.GetDeviceInfos().Where(d => d.DeviceType == deviceType);
+        }
 
         public class MessageFactories {
             public static XElement Hello(ActorXmlService service) {
@@ -37,11 +47,11 @@ namespace ActorXml.Common {
 
         private static class MessageHandlers {
             public static Action<XElement, DeviceInfo, ActorXmlDispatcher> Hello(ActorXmlService service) {
-                return (message, deviceInfo, dispatcher) => dispatcher.Send(deviceInfo.Name, service.GetHelloMessage(true));
+                return (message, deviceInfo, dispatcher) => dispatcher.Send(deviceInfo, service.GetHelloMessage(true));
             }
 
             public static void Ping(XElement message, DeviceInfo deviceInfo, ActorXmlDispatcher ActorXmlDispatcher) {
-                ActorXmlDispatcher.Send(deviceInfo.Name, new XElement("pingResponse", message.Attributes()));
+                ActorXmlDispatcher.Send(deviceInfo, new XElement("pingResponse", message.Attributes()));
             }
         }
 

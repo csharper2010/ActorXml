@@ -35,7 +35,7 @@ namespace ActorXml.KS {
                         return;
                     }
                     int bestand = ksActor.RequestAsync<int>(KSActor.Messages.Bestandsabfrage(pzn)).Result;
-                    dispatcher.Send(device.Name, new XElement("bestandResponse", message.Attributes().Concat(new [] {new XAttribute("menge", bestand)})));
+                    dispatcher.Send(device, new XElement("bestandResponse", message.Attributes().Concat(new [] {new XAttribute("menge", bestand)})));
                 };
             }
 
@@ -45,7 +45,7 @@ namespace ActorXml.KS {
                         return;
                     }
                     int auslagerungsmenge = ksActor.RequestAsync<int>(KSActor.Messages.Auslagerung(pzn, menge)).Result;
-                    dispatcher.Send(device.Name, new XElement("auslagerungResponse", message.Attributes().Concat(new [] {new XAttribute("ausgelagerteMenge", auslagerungsmenge)})));
+                    dispatcher.Send(device, new XElement("auslagerungResponse", message.Attributes().Concat(new [] {new XAttribute("ausgelagerteMenge", auslagerungsmenge)})));
                 };
             }
 

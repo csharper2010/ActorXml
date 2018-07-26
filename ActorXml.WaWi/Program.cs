@@ -5,7 +5,7 @@ using ActorXml.Common;
 
 namespace ActorXml.WaWi {
     class Program {
-        static void Main(string[] args) {
+        static void Main() {
             var random = new Random();
             Console.WriteLine("Creating ActorXmlService");
             var rawService = new ActorXmlWaWiService();
@@ -28,7 +28,7 @@ namespace ActorXml.WaWi {
                     string[] parts = line.Split(" ");
                     switch (parts[0].ToLower()) {
                         case "ping":
-                            Console.WriteLine(rawService.Request(parts[1], ActorXmlService.MessageFactories.Ping(), TimeSpan.FromTicks(random.Next(100000))));
+                            Console.WriteLine(rawService.Request(rawService.GetDevice(parts[1]), ActorXmlService.MessageFactories.Ping(), TimeSpan.FromTicks(random.Next(100000))));
                             break;
                         case "devices":
                             Console.WriteLine($"KS: {rawService.HasKS()}, Sichtwahl: {rawService.HasSichtwahl()}");

@@ -19,7 +19,7 @@ namespace ActorXml.Common {
             if (_actor != null) {
                 Stop();
             }
-            _actor = Actor.Spawn(Actor.FromProducer(() => new ActorXmlActor(HandleIncomingMessage, _getHelloMessage)));
+            _actor = Actor.Spawn(Actor.FromProducer(() => new ActorXmlActor(HandleIncomingMessage, DoHandshake)));
         }
 
         public void Stop() {
@@ -38,21 +38,21 @@ namespace ActorXml.Common {
             return _actor.RequestAsync<IEnumerable<DeviceInfo>>(ActorXmlActor.Messages.GetDeviceInfos()).Result;
         }
 
-        public void Send(string client, XElement xElement) {
+        public void Send(DeviceInfo client, XElement xElement) {
             _actor.Tell(ActorXmlActor.Messages.OutgoingMessage(client, xElement));
         }
 
         public void Broadcast(DeviceType deviceType, XElement xElement) {
             foreach (var device in GetDeviceInfos().Where(d => d.DeviceType == deviceType)) {
-                Send(device.Name, xElement);
+                Send(device, xElement);
             }
         }
 
-        public TResult Request<TResult>(string client, XElement request, Func<XElement, TResult> responseHandler, TimeSpan timeout) {
+        public TResult Request<TResult>(DeviceInfo client, XElement request, Func<XElement, TResult> responseHandler, TimeSpan timeout) {
             int threadId = Thread.CurrentThread.ManagedThreadId;
             TResult result;
             try {
-                result = responseHandler(_actor.RequestAsync<XElement>(ActorXmlActor.Messages.RequestMessage(client, request, DateTime.UtcNow + timeout + TimeSpan.FromSeconds(10)), timeout).Result);
+                result = responseHandler(_actor.RequestAsync<XElement>(ActorXmlActor.Messages.OutgoingRequestMessage(client, request, DateTime.UtcNow + timeout + TimeSpan.FromSeconds(10)), timeout).Result);
             } catch (Exception e) when (e is TimeoutException || e.InnerException is TimeoutException) {
                 Console.WriteLine($"Timeout {timeout} hat angeschlagen");
                 result = default(TResult);
@@ -78,6 +78,10 @@ namespace ActorXml.Common {
                 // hier wird in der echten Welt ein neuer Thread erzeugt, BusinessContext aufgebaut und die eigentliche Aufgabe ausgeführt
                 ThreadPool.QueueUserWorkItem(_ => versionDict.Values.First().Invoke(message, deviceInfo, this));
             }
+        }
+
+        private void DoHandshake(DeviceInfo deviceInfo) {
+            Send(deviceInfo, _getHelloMessage());
         }
     }
 

@@ -17,7 +17,7 @@ namespace ActorXml.WaWi {
             if (ks == null) {
                 return null;
             }
-            return _actorXmlService.Request(ks.Name, ActorXmlWaWiService.MessageFactories.Bestand(pzn), TimeSpan.FromMilliseconds(300));
+            return _actorXmlService.Request(ks, ActorXmlWaWiService.MessageFactories.Bestand(pzn), TimeSpan.FromMilliseconds(300));
         }
 
         public int? DoAuslagerung(int pzn, int menge) {
@@ -25,7 +25,7 @@ namespace ActorXml.WaWi {
             if (ks == null) {
                 return null;
             }
-            return _actorXmlService.Request(ks.Name, ActorXmlWaWiService.MessageFactories.Auslagerung(pzn, menge), TimeSpan.FromMilliseconds(300));
+            return _actorXmlService.Request(ks, ActorXmlWaWiService.MessageFactories.Auslagerung(pzn, menge), TimeSpan.FromMilliseconds(300));
         }
 
         public void Async_DoAuslagerung(IEnumerable<int> pzns) {
@@ -34,7 +34,7 @@ namespace ActorXml.WaWi {
                 return;
             }
             foreach (var pzn in pzns) {
-                _actorXmlService.Send(ks.Name, ActorXmlWaWiService.MessageFactories.Auslagerung(pzn, 1).Request);
+                _actorXmlService.Send(ks, ActorXmlWaWiService.MessageFactories.Auslagerung(pzn, 1).Request);
             }
         }
     }

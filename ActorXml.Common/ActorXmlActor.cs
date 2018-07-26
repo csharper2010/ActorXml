@@ -11,17 +11,19 @@ using ActorXml.Common.Tcp.Server;
 namespace ActorXml.Common {
     public partial class ActorXmlActor : IActor {
         private readonly Dictionary<PID, DeviceInfo> _deviceInfos = new Dictionary<PID, DeviceInfo>();
+
         private readonly Action<XElement, DeviceInfo> _callHandler;
-        private readonly Func<XElement> _createHelloMessage;
+        private readonly Action<DeviceInfo> _doHandshake;
+
 
         private readonly IDictionary<int, PID> _tcpListenerActors = new Dictionary<int, PID>();
         private readonly IDictionary<string, PID> _tcpClientActors = new Dictionary<string, PID>();
 
         private readonly Dictionary<string, (PID resultPid, DateTime allowGarbageCollectAfter)> _openRequests = new Dictionary<string, (PID resultPid, DateTime allowGarbageCollectAfter)>();
 
-        public ActorXmlActor(Action<XElement, DeviceInfo> callHandler, Func<XElement> createHelloMessage) {
+        public ActorXmlActor(Action<XElement, DeviceInfo> callHandler, Action<DeviceInfo> doHandshake) {
             _callHandler = callHandler;
-            _createHelloMessage = createHelloMessage;
+            _doHandshake = doHandshake;
         }
 
         public Task ReceiveAsync(IContext context) {
@@ -36,8 +38,7 @@ namespace ActorXml.Common {
                     break;
 
                 case InitiateHandshakeMessage _:
-                    // TODO ist der Handshake über diesen Weg glücklich gewählt?
-                    context.Respond(TcpChannelActor.Messages.WriteMessage(_createHelloMessage()));
+                    DoHandshakeWithDevice(context.Sender);
                     break;
 
                 case GetDeviceInfosMessage _:
@@ -56,30 +57,30 @@ namespace ActorXml.Common {
 
                 case ActorXmlOutgoingMessage outgoingMessage:
                     bool found = false;
-                    foreach (var client in _deviceInfos.Where(kvp =>
-                        kvp.Value.Name.Equals(outgoingMessage.ClientName, StringComparison.CurrentCultureIgnoreCase))) {
-                        client.Key.Tell(TcpChannelActor.Messages.WriteMessage(outgoingMessage.Message));
+                    PID client = outgoingMessage.DeviceInfo.ResponsibleActor;
+                    if (!_deviceInfos.ContainsKey(outgoingMessage.DeviceInfo.ResponsibleActor)) {
+                        Console.WriteLine($"Client {outgoingMessage.DeviceInfo} not found");
+                    } else {
+                        client.Tell(TcpChannelActor.Messages.WriteMessage(outgoingMessage.Message));
                         found = true;
                     }
                     if (!found) {
-                        Console.WriteLine($"Client {outgoingMessage.ClientName} not found");
                     }
                     break;
 
-                case ActorXmlRequestMessage requestMessage:
+                case ActorXmlOutgoingRequestMessage requestMessage:
                     foreach (var kvp in _openRequests.Where(r => r.Value.allowGarbageCollectAfter < DateTime.Now).ToArray()) {
                         _openRequests.Remove(kvp.Key);
                     }
 
-                    var targetClient = _deviceInfos.FirstOrDefault(kvp =>
-                        kvp.Value.Name.Equals(requestMessage.ClientName, StringComparison.CurrentCultureIgnoreCase));
-                    if (targetClient.Key == null) {
-                        Console.WriteLine($"Client {requestMessage.ClientName} not found");
+                    PID targetClient = requestMessage.DeviceInfo.ResponsibleActor;
+                    if (!_deviceInfos.ContainsKey(targetClient)) {
+                        Console.WriteLine($"Client {requestMessage.DeviceInfo} not found");
                     } else {
                         string id = Guid.NewGuid().ToString();
                         _openRequests.Add(id, (context.Sender, requestMessage.AllowGarbageCollectAfter));
                         requestMessage.Message.Add(new XAttribute("id", id));
-                        targetClient.Key.Tell(TcpChannelActor.Messages.WriteMessage(requestMessage.Message));
+                        targetClient.Tell(TcpChannelActor.Messages.WriteMessage(requestMessage.Message));
                     }
                     break;
             }
@@ -106,32 +107,46 @@ namespace ActorXml.Common {
                     if (_deviceInfos.ContainsKey(incomingMessage.SourceClient)) {
                         Console.WriteLine("Deviceinfo wird aktualisiert");
                     }
-                    _deviceInfos[incomingMessage.SourceClient] = new DeviceInfo(deviceType, name.Value);
+                    _deviceInfos[incomingMessage.SourceClient] = new DeviceInfo(deviceType, name.Value, incomingMessage.SourceClient);
                     break;
             }
 
-            if (!_deviceInfos.TryGetValue(incomingMessage.SourceClient, out DeviceInfo deviceInfo)) {
-                Console.WriteLine("Device hat sich nicht fachlich angemeldet, Nachricht wird ignoriert");
-                return;
+            if (!_deviceInfos.TryGetValue(incomingMessage.SourceClient, out DeviceInfo deviceInfo) || deviceInfo.DeviceType == DeviceType.Unknown) {
+                Console.WriteLine("Device hat sich nicht fachlich angemeldet, Nachricht wird ignoriert und ein Handshake versucht");
+                DoHandshakeWithDevice(incomingMessage.SourceClient);
+            } else {
+                _callHandler(incomingMessage.Message, deviceInfo);
             }
-            _callHandler(incomingMessage.Message, deviceInfo);
+        }
+
+        private void DoHandshakeWithDevice(PID client) {
+            if (!_deviceInfos.TryGetValue(client, out DeviceInfo deviceInfo)) {
+                _deviceInfos[client] = deviceInfo = new DeviceInfo(DeviceType.Unknown, Guid.NewGuid().ToString(), client);
+            }
+            _doHandshake(deviceInfo);
         }
     }
 
     public class DeviceInfo {
-        public DeviceInfo(DeviceType deviceType, string name) {
+        internal DeviceInfo(DeviceType deviceType, string name, PID responsibleActor) {
             DeviceType = deviceType;
             Name = name;
+            ResponsibleActor = responsibleActor;
         }
 
         public DeviceType DeviceType { get; }
 
         public string Name { get; }
+
+        internal PID ResponsibleActor { get; }
+
+        public override string ToString() => $"{DeviceType} {Name} ({ResponsibleActor})";
     }
 
     public enum DeviceType {
-        Sichtwahl,
-        KS,
+        Unknown,
         Warenwirtschaft,
+        KS,
+        Sichtwahl,
     }
 }

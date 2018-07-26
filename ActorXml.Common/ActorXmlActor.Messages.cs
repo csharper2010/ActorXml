@@ -24,19 +24,19 @@ namespace ActorXml.Common {
         }
 
         private class ActorXmlOutgoingMessage : ActorXmlMessage {
-            public string ClientName { get; }
+            public DeviceInfo DeviceInfo { get; }
 
-            public ActorXmlOutgoingMessage(string clientName, XElement message) : base(message) {
-                ClientName = clientName;
+            public ActorXmlOutgoingMessage(DeviceInfo deviceInfo, XElement message) : base(message) {
+                DeviceInfo = deviceInfo;
             }
         }
 
-        private class ActorXmlRequestMessage : ActorXmlMessage {
-            public string ClientName { get; }
+        private class ActorXmlOutgoingRequestMessage : ActorXmlMessage {
+            public DeviceInfo DeviceInfo { get; }
             public DateTime AllowGarbageCollectAfter { get; }
 
-            public ActorXmlRequestMessage(string clientName, XElement message, DateTime allowGarbageCollectAfter) : base(message) {
-                ClientName = clientName;
+            public ActorXmlOutgoingRequestMessage(DeviceInfo deviceInfo, XElement message, DateTime allowGarbageCollectAfter) : base(message) {
+                DeviceInfo = deviceInfo;
                 AllowGarbageCollectAfter = allowGarbageCollectAfter;
             }
         }
@@ -64,8 +64,8 @@ namespace ActorXml.Common {
         public static class Messages {
             public static object GetDeviceInfos() => new GetDeviceInfosMessage();
             public static object IncomingMessage(PID sourceClient, XElement message) => new ActorXmlIncomingMessage(sourceClient, message);
-            public static object OutgoingMessage(string clientName, XElement message) => new ActorXmlOutgoingMessage(clientName, message);
-            public static object RequestMessage(string clientName, XElement message, DateTime allowGarbageCollectAfter) => new ActorXmlRequestMessage(clientName, message, allowGarbageCollectAfter);
+            public static object OutgoingMessage(DeviceInfo deviceInfo, XElement message) => new ActorXmlOutgoingMessage(deviceInfo, message);
+            public static object OutgoingRequestMessage(DeviceInfo deviceInfo, XElement message, DateTime allowGarbageCollectAfter) => new ActorXmlOutgoingRequestMessage(deviceInfo, message, allowGarbageCollectAfter);
 
             public static object StartTcpListener(int port) => new StartTcpListenerMessage(port);
             public static object StartTcpClient(string ipAddress, int port) => new StartTcpClientMessage(ipAddress, port);
