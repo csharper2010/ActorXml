@@ -22,37 +22,39 @@ namespace ActorXml.Common.Tcp {
         }
 
         public async Task ReceiveAsync(IContext context) {
-            if (context.Message is Started) {
-                XmlReader reader = GetReader(false);
-                while (true) {
-                    try {
-                        while (await reader.ReadAsync()) {
-                            if (reader.NodeType == XmlNodeType.Element) {
+            switch (context.Message) {
+                case Started _:
+                    XmlReader reader = GetReader();
+                    while (true) {
+                        try {
+                            while (await reader.ReadAsync()) {
+                                if (reader.NodeType == XmlNodeType.Element) {
+                                    break;
+                                }
+                            }
+                            if (reader.NodeType != XmlNodeType.Element) {
                                 break;
                             }
-                        }
-                        if (reader.NodeType != XmlNodeType.Element) {
+                            var el = XElement.Load(reader.ReadSubtree());
+                            Console.WriteLine(
+                                $"thread: {Thread.CurrentThread.ManagedThreadId} Received: {el.Name},  Nodetype: {el.NodeType}\r\n {el} ");
+                            context.Parent.Request(TcpChannelActor.Messages.MessageRead(el), context.Self);
+                        } catch (IOException ioe) when (!_client.Connected) {
+                            Console.WriteLine("Devinfo: " + ioe.Message);
                             break;
+                        } catch (XmlException ex) {
+                            Console.WriteLine("EX: " + ex.Message);
+                            reader.Dispose();
+                            reader = GetReader();
                         }
-                        var el = XElement.Load(reader.ReadSubtree());
-                        Console.WriteLine(
-                            $"thread: {Thread.CurrentThread.ManagedThreadId} Received: {el.Name},  Nodetype: {el.NodeType}\r\n {el} ");
-                        context.Parent.Request(TcpChannelActor.Messages.MessageRead(el), context.Self);
-                    } catch (IOException ioe) when (!_client.Connected) {
-                        Console.WriteLine("Devinfo: " + ioe.Message);
-                        break;
-                    } catch (XmlException ex) {
-                        Console.WriteLine("EX: " + ex.Message);
-                        reader.Dispose();
-                        reader = GetReader(false);
                     }
-                }
 
-                context.Parent.Request(TcpChannelActor.Messages.ClientClosed(), context.Self);
+                    context.Parent.Request(TcpChannelActor.Messages.ClientClosed(), context.Self);
+                    break;
             }
         }
 
-        private XmlReader GetReader(bool async) {
+        private XmlReader GetReader() {
             return XmlReader.Create(_client.GetStream(), new XmlReaderSettings {
                     ConformanceLevel = ConformanceLevel.Fragment,
                     CloseInput = false,

@@ -18,39 +18,38 @@ namespace ActorXml.Common.Tcp.Client {
 
         public Task ReceiveAsync(IContext context) {
             // TODO auf welcher Ebene findet der echte regelmäßige PING statt? Ist das von der Anwendung initiiert (z.B. weil auch die Konfiguration dafür in der Anwendung liegt) oder eine Low-Level-Aufgabe
-            if (context.Message is Started) {
-                context.Tell(context.Self, Messages.TryConnect());
-                return Actor.Done;
-            }
-            if (context.Message is TryConnectMessage) {
-                try {
-                    Console.WriteLine($"Trying to connect to {_ipAddress}, {_port}...");
-                    TcpClient client = new TcpClient(_ipAddress, _port);
-                    if (client.Connected) {
-                        _tcpClient = client;
-                        context.Spawn(Actor.FromProducer(() => new TcpChannelActor(_tcpClient, _actorXmlActor, shouldInitiateHandshake: true)));
-                    }
-                    context.ReenterAfter(Task.Delay(TimeSpan.FromSeconds(30)), () => context.Tell(context.Self, Messages.CheckAlive()));
-                } catch (Exception e) {
-                    Console.WriteLine($"Exception {e.Message}, Retry in 5 Seconds");
-                    context.ReenterAfter(Task.Delay(TimeSpan.FromSeconds(5)), () => context.Tell(context.Self, Messages.TryConnect()));
-                }
-                return Actor.Done;
-            }
-            if (context.Message is CheckAliveMessage) {
-                if (_tcpClient.Connected) {
-                    Console.WriteLine($"Connection is alive");
-                    context.ReenterAfter(Task.Delay(TimeSpan.FromSeconds(30)), () => context.Tell(context.Self, Messages.CheckAlive()));
-                } else {
-                    try {
-                        _tcpClient.Dispose();
-                    } catch (Exception e) {
-                        Console.WriteLine($"Fehler bei Dispose: {e.Message}");
-                    }
-                    _tcpClient = null;
+            switch (context.Message) {
+                case Started _:
                     context.Tell(context.Self, Messages.TryConnect());
-                }
-                return Actor.Done;
+                    break;
+                case TryConnectMessage _:
+                    try {
+                        Console.WriteLine($"Trying to connect to {_ipAddress}, {_port}...");
+                        TcpClient client = new TcpClient(_ipAddress, _port);
+                        if (client.Connected) {
+                            _tcpClient = client;
+                            context.Spawn(Actor.FromProducer(() => new TcpChannelActor(_tcpClient, _actorXmlActor, shouldInitiateHandshake: true)));
+                        }
+                        context.ReenterAfter(Task.Delay(TimeSpan.FromSeconds(30)), () => context.Tell(context.Self, Messages.CheckAlive()));
+                    } catch (Exception e) {
+                        Console.WriteLine($"Exception {e.Message}, Retry in 5 Seconds");
+                        context.ReenterAfter(Task.Delay(TimeSpan.FromSeconds(5)), () => context.Tell(context.Self, Messages.TryConnect()));
+                    }
+                    break;
+                case CheckAliveMessage _:
+                    if (_tcpClient.Connected) {
+                        Console.WriteLine($"Connection is alive");
+                        context.ReenterAfter(Task.Delay(TimeSpan.FromSeconds(30)), () => context.Tell(context.Self, Messages.CheckAlive()));
+                    } else {
+                        try {
+                            _tcpClient.Dispose();
+                        } catch (Exception e) {
+                            Console.WriteLine($"Fehler bei Dispose: {e.Message}");
+                        }
+                        _tcpClient = null;
+                        context.Tell(context.Self, Messages.TryConnect());
+                    }
+                    break;
             }
             return Actor.Done;
         }
