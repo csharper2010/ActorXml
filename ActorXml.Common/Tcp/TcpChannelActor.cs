@@ -41,7 +41,7 @@ namespace ActorXml.Common.Tcp {
                     break;
 
                 case ClientClosedMessage _:
-                    _actorXmlActor.Tell(ActorXmlActor.Messages.IncomingMessage(context.Self, new XElement("bye", null)));
+                    _actorXmlActor.Request(ActorXmlActor.Messages.ChannelClosed(), context.Self);
                     context.Parent.Request(TcpListenerActor.Messages.TcpClientClosed(), context.Self);
                     context.Self.Stop();
                     break;

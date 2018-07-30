@@ -61,6 +61,8 @@ namespace ActorXml.Common {
 
         private class InitiateHandshakeMessage { }
 
+        private class ChannelClosedMessage { }
+
         public static class Messages {
             public static object GetDeviceInfos() => new GetDeviceInfosMessage();
             public static object IncomingMessage(PID sourceClient, XElement message) => new ActorXmlIncomingMessage(sourceClient, message);
@@ -71,6 +73,7 @@ namespace ActorXml.Common {
             public static object StartTcpClient(string ipAddress, int port) => new StartTcpClientMessage(ipAddress, port);
 
             public static object InitiateHandshake() => new InitiateHandshakeMessage();
+            public static object ChannelClosed() => new ChannelClosedMessage();
         }
     }
 }

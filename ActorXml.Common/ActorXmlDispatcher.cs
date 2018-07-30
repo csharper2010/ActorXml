@@ -9,9 +9,10 @@ namespace ActorXml.Common {
     public class ActorXmlDispatcher : IStartable {
         private readonly Func<XElement> _getHelloMessage;
         private PID _actor;
-        private readonly IDictionary<string, SortedDictionary<Version, Action<XElement, DeviceInfo, ActorXmlDispatcher>>> _incomingMessageHandlers = new Dictionary<string, SortedDictionary<Version, Action<XElement, DeviceInfo, ActorXmlDispatcher>>>();
+        private readonly IDictionary<string, SortedDictionary<Version, Action<XElement, DeviceInfo, ActorXmlDispatcher>>> _incomingMessageHandlers;
 
         public ActorXmlDispatcher(Func<XElement> getHelloMessage) {
+            _incomingMessageHandlers = new Dictionary<string, SortedDictionary<Version, Action<XElement, DeviceInfo, ActorXmlDispatcher>>>();
             _getHelloMessage = getHelloMessage;
         }
 

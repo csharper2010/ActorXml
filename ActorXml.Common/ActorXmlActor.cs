@@ -41,6 +41,10 @@ namespace ActorXml.Common {
                     DoHandshakeWithDevice(context.Sender);
                     break;
 
+                case ChannelClosedMessage _:
+                    _deviceInfos.Remove(context.Sender);
+                    break;
+
                 case GetDeviceInfosMessage _:
                     context.Respond(_deviceInfos.Values.ToArray());
                     break;
@@ -89,10 +93,6 @@ namespace ActorXml.Common {
 
         private void HandleIncomingMessage(ActorXmlIncomingMessage incomingMessage) {
             switch (incomingMessage.Message.Name.LocalName) {
-                case "bye":
-                    _deviceInfos.Remove(incomingMessage.SourceClient);
-                    return;
-
                 case "hello":
                 case "helloResponse":
                     if (!Enum.TryParse(incomingMessage.Message.Attribute("type")?.Value, out DeviceType deviceType)) {
